@@ -23,12 +23,14 @@ from object_detection.utils import ops as utils_ops
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
+from threading import Thread
+
 import cv2
 # cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
-YOUR_MODEL_PATH = 'C:/Users/dataset/fine_tuned_model/'
-YOUR_DATA_PB_PATH = 'C:/Users/dataset'
-YOUR_MODEL_NAME = 'x3_10000'
+YOUR_MODEL_PATH = '/Users/seohui/online_edu_helper/local_models/'
+YOUR_DATA_PB_PATH = '/Users/seohui/online_edu_helper/'
+YOUR_MODEL_NAME = 'fine_tuned_model'
 
 app = Flask(__name__, static_url_path='', static_folder='client/build')
 CORS(app)
@@ -44,7 +46,7 @@ detected_object = []
 tf.gfile = tf.io.gfile
 
 # For Mac m1
-# tf.config.experimental.set_visible_devices([], 'GPU')
+tf.config.experimental.set_visible_devices([], 'GPU')
 
 #--- Model Preparation ---#
 def load_model(model_name):
@@ -107,7 +109,7 @@ def run_inference(model):
     else:
         print("no camera")
         return -1
-    while True:
+    while cap.isOpened():
         ret, image_np = cap.read()
         # Actual detection
         output_dict = run_inference_for_single_image(model, image_np)
@@ -136,7 +138,7 @@ def run_inference(model):
                 category_index,
                 instance_masks=output_dict.get('detection_masks_reframed', None),
                 use_normalized_coordinates=True,
-                line_thickness=8)
+                line_thickness=6)
             cv2.imwrite('object_detection.jpg', cv2.resize(image_np, (800,600)))
         yield (b'--frame\r\n' 
             b'Content-Type: image/jpeg\r\n\r\n' + open('object_detection.jpg', 'rb').read() + b'\r\n')
@@ -146,16 +148,16 @@ def run_inference(model):
 object = {"book": 1, "face": 2, "glue": 3, "ocarina": 4, "pen": 5, 
           "phone": 6, "recorder": 7, "ruler": 8, "scissors": 9}
 
-object_name = {1: "book", 2: "face", 3: "glue", 4: "ocarina", 5: "pen",
-               6: "phone", 7: "recorder", 8: "ruler", 9: "scissors"}
+object_name = {1: "책", 2: "face", 3: "풀", 4: "오카리나", 5: "펜",
+               6: "phone", 7: "리코더", 8: "자", 9: "가위"}
 
 return_dic = {"id": 1, "name": "서희", "attendance": False, "focus": True, "material":[]}
 
-@app.route("/process", methods=['GET', 'POST'])
+@app.route("/api/process", methods=['GET', 'POST'])
 def process():
-    global selected_object, detected_object
+    global selected_object, detected_object, return_dic
     selected_object = []
-    detected_object = []
+    return_dic['material'] = []
     
     content = request.json
     if content['attendance']:
@@ -165,6 +167,18 @@ def process():
     if content['material']:
         for m in content['material']:
             selected_object.append(object[m])
+   
+    th = Thread(target = my_detection)
+    th.start()
+    th.join()          
+    
+    return_dic["material"] = list(set(return_dic["material"]))    
+
+    return jsonify(return_dic)
+
+def my_detection():
+    global detected_object, selected_object, return_dic
+    detected_object = []
 
     time.sleep(10) # 시간 딜레이
     while not detected_object:
@@ -178,12 +192,11 @@ def process():
     if object["phone"] in detected_object:
         return_dic['focus'] = False
         
-    for obj in detected_object:
-        if obj != 2 or obj != 6:
+    for obj in set(selected_object)-set(detected_object):
+        if obj != 2 and obj != 6:
             return_dic['material'].append(object_name[obj])
-            
-    return jsonify(return_dic)
 
+    return
 
 def gen(): 
    """Video streaming generator function.""" 
@@ -194,11 +207,11 @@ def gen():
               b'Content-Type: image/jpeg\r\n\r\n' + open('pic.jpg', 'rb').read() + b'\r\n')
 
 
-@app.route("/video_feed")
+@app.route("/api/video_feed")
 def video_feed():
     return Response(run_inference(detection_model), 
                    mimetype='multipart/x-mixed-replace; boundary=frame')
     
-    
+   
 if __name__ == '__main__':
-     app.run('localhost', port=5000)
+     app.run('0.0.0.0', port=4040)
