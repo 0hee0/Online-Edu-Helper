@@ -5,12 +5,13 @@ import StudentList from '../components/StudentList';
 import MaterialCheckbox from '../components/MaterialCheckbox';
 
 // const apiURL = "127.0.0.1:5000";
-const apiURL = 'http://172.30.1.15:4040/api';
+const apiURL = 'http://localhost:4040/api';
 
 function OnlineEduHelper() {
     // attendance: face    material: book, glue, scissors, ocarina, recorder, pen, ruler    focus: (face & )phone
     const [switchControl, setSwitchControl] = useState({ "attendance": true, "focus": false, "material": false });
     const [checkedMaterial, setCheckedMaterial] = useState([]);
+    const [loading, setLoading] = useState(true);
     // TEST
     /*
     const [students, setStudents] = useState([
@@ -21,9 +22,22 @@ function OnlineEduHelper() {
     */
     const [students, setStudents] = useState([]);
 
-    useEffect(() => {
-        getStudentList();    
-    }, [switchControl, checkedMaterial])
+    useEffect(() => { 
+        if (switchControl.material===false) {
+            setCheckedMaterial([])
+        }
+        if (switchControl) {
+            setLoading(true);
+        }
+        getStudentList();
+    }, [switchControl])
+
+    useEffect(() => { 
+        if (checkedMaterial.length > 0) {
+            setLoading(true);
+            getStudentList();
+        }
+    }, [checkedMaterial])
 
     function getStudentList() {
         let data = {
@@ -43,10 +57,12 @@ function OnlineEduHelper() {
         if (res.status !== 200) {
             throw new Error(res.statusText);
         }
+        setLoading(false);
         return res.json();
         }).then(data => {
             console.log("res!")
             console.log(data);
+            setLoading(false);
             return setStudents(data);
         })
     };
@@ -79,14 +95,14 @@ function OnlineEduHelper() {
         <Grid container pt={6} pb={2} spacing={2}>
             <Grid item xs={8}>
             {/* webcam */}
-            <Box width='100%' sx={{ border: '1px solid black', borderRadius: '0.5rem', height: '300px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <Box width='100%' sx={{ backgroundColor: 'black', border: '1px solid black', borderRadius: '0.25rem', height: '300px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <img src={`${apiURL}/video_feed`} width="400px" /> 
             </Box>
             </Grid>
             <Grid item xs={4}>
             {/* student list */}
-            <Box width='100%' sx={{ border: '1px solid black', borderRadius: '0.5rem', height: '268px', py: '16px', overflowY: 'auto' }}>
-                <StudentList switchControl={switchControl} student={students} />
+            <Box width='100%' sx={{ boxShadow: 'rgba(0, 0, 0, 0.24) 0px 3px 8px', borderRadius: '0.25rem', height: '268px', py: '16px', overflowY: 'auto' }}>
+                <StudentList switchControl={switchControl} student={students} loading={loading} />
             </Box>
             </Grid>
         </Grid>

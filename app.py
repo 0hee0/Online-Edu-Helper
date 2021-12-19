@@ -26,7 +26,7 @@ from object_detection.utils import visualization_utils as vis_util
 from threading import Thread
 
 import cv2
-# cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
 YOUR_MODEL_PATH = '/Users/seohui/online_edu_helper/local_models/'
 YOUR_DATA_PB_PATH = '/Users/seohui/online_edu_helper/'
@@ -53,7 +53,7 @@ def load_model(model_name):
     model_dir = YOUR_MODEL_PATH + model_name  # efficientdet_d1
     
     model_dir = pathlib.Path(model_dir)/"saved_model"
-    print('[INFO] Loading the modle from '+ str(model_dir))
+    print('[INFO] Loading the model from '+ str(model_dir))
     model = tf.saved_model.load(str(model_dir))
 
     return model
@@ -103,6 +103,7 @@ def run_inference_for_single_image(model, image):
 
 def run_inference(model):
     global selected_object, detected_object
+    print('run!')
     cap = cv2.VideoCapture(0)
     if cap.isOpened():
         print("success")
@@ -172,6 +173,22 @@ def process():
     th.start()
     th.join()          
     
+    detected_object = list(set(detected_object))
+    
+    if object["face"] in detected_object:
+        return_dic["attendance"] = True
+    else:
+        return_dic["attendance"] = False
+    
+    if object["phone"] in detected_object:
+        return_dic['focus'] = False
+    else:
+        return_dic['focus'] = True
+        
+    for obj in set(selected_object)-set(detected_object):
+        if obj != 2 and obj != 6:
+            return_dic['material'].append(object_name[obj])
+
     return_dic["material"] = list(set(return_dic["material"]))    
 
     return jsonify(return_dic)
@@ -181,21 +198,7 @@ def my_detection():
     detected_object = []
 
     time.sleep(10) # 시간 딜레이
-    while not detected_object:
-        continue
     
-    detected_object = list(set(detected_object))
-    
-    if object["face"] in detected_object:
-        return_dic["attendance"] = True
-    
-    if object["phone"] in detected_object:
-        return_dic['focus'] = False
-        
-    for obj in set(selected_object)-set(detected_object):
-        if obj != 2 and obj != 6:
-            return_dic['material'].append(object_name[obj])
-
     return
 
 def gen(): 
@@ -214,4 +217,4 @@ def video_feed():
     
    
 if __name__ == '__main__':
-     app.run('0.0.0.0', port=4040)
+     app.run('localhost', port=4040)
