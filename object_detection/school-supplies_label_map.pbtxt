@@ -1,0 +1,45 @@
+item {
+    name: "book",
+    id: 1,
+    display_name: "book"
+}
+item {
+    name: "face",
+    id: 2,
+    display_name: "face"
+}
+item {
+    name: "glue",
+    id: 3,
+    display_name: "glue"
+}
+item {
+    name: "ocarina",
+    id: 4,
+    display_name: "ocarina"
+}
+item {
+    name: "pen",
+    id: 5,
+    display_name: "pen"
+}
+item {
+    name: "phone",
+    id: 6,
+    display_name: "phone"
+}
+item {
+    name: "recorder",
+    id: 7,
+    display_name: "recorder"
+}
+item {
+    name: "ruler",
+    id: 8,
+    display_name: "ruler"
+}
+item {
+    name: "scissors",
+    id: 9,
+    display_name: "scissors"
+}
