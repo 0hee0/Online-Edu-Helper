@@ -28,8 +28,8 @@ from threading import Thread
 import cv2
 cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
-YOUR_MODEL_PATH = '/Users/seohui/online_edu_helper/local_models/'
-YOUR_DATA_PB_PATH = '/Users/seohui/online_edu_helper/'
+YOUR_MODEL_PATH = './object_detection/local_models/'
+YOUR_DATA_PB_PATH = './object_detection/'
 YOUR_MODEL_NAME = 'fine_tuned_model'
 
 app = Flask(__name__, static_url_path='', static_folder='client/build')
